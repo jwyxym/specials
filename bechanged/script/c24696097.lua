@@ -27,7 +27,7 @@ function c24696097.initial_effect(c)
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_SINGLE)
 	e3:SetCode(EFFECT_MATERIAL_CHECK)
-	e3:SetValue(c26268488.valcheck)
+	e3:SetValue(c24696097.valcheck)
 	c:RegisterEffect(e3)
 	--disable attack
 	local e4=Effect.CreateEffect(c)
@@ -58,8 +58,22 @@ c24696097.material_type=TYPE_SYNCHRO
 function c24696097.mtcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsAbleToEnterBP() and Duel.GetFieldGroupCount(tp,LOCATION_DECK,0)>=5
 end
+function c24696097.cfilter(c)
+	return c:IsType(TYPE_TUNER) and (c:IsLocation(LOCATION_DECK) or c:IsAbleToDeck())
+end
 function c24696097.mtop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
+	Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(24696097,4))
+	local sg=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(c24696097.cfilter),tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
+	local tc=sg:GetFirst()
+	if Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_GRAVE,0,1,nil,44508094) and tc then
+		Duel.ShuffleDeck(tp)
+		if tc:IsLocation(LOCATION_DECK) then
+			Duel.MoveSequence(tc,SEQ_DECKTOP)
+		else
+			Duel.SendtoDeck(tc,nil,SEQ_DECKTOP,REASON_EFFECT)
+		end
+	end
 	Duel.ConfirmDecktop(tp,5)
 	local g=Duel.GetDecktopGroup(tp,5)
 	local ct=g:FilterCount(Card.IsType,nil,TYPE_TUNER)
@@ -90,9 +104,9 @@ function c24696097.discon(e,tp,eg,ep,ev,re,r,rp)
 end
 function c24696097.distg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
-	local ct=1
-	if c:GetFlagEffectLabel(24696097) then ct=c:GetFlagEffectLabel(24696097) end
-	if chk==0 then return c:GetFlagEffect(24696098)<ct end
+	local dt=1
+	if c:GetFlagEffectLabel(24696097) then dt=c:GetFlagEffectLabel(24696097) end
+	if chk==0 then return c:GetFlagEffect(24696098)<dt end
 	Duel.SetOperationInfo(0,CATEGORY_DISABLE,eg,1,0,0)
 	if re:GetHandler():IsDestructable() and re:GetHandler():IsRelateToEffect(re) then
 		Duel.SetOperationInfo(0,CATEGORY_DESTROY,eg,1,0,0)
@@ -104,8 +118,14 @@ function c24696097.disop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Destroy(eg,REASON_EFFECT)
 	end
 end
+function c24696097.valfilter(c)
+   return c:IsType(TYPE_SYNCHRO) and not c:IsTuner(c)
+end
 function c24696097.valcheck(e,c)
-	c:RegisterFlagEffect(24696097,RESET_EVENT+RESETS_STANDARD-RESET_TOFIELD,0,1,c:GetMaterialCount()-1)
+	local dt=c:GetMaterial():FilterCount(c24696097.valfilter,nil)+1
+	if dt>0 then
+		c:RegisterFlagEffect(24696097,RESET_EVENT+RESETS_STANDARD-RESET_TOFIELD,0,1,dt)
+	end
 end
 function c24696097.dacon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetAttacker():GetControler()~=tp
